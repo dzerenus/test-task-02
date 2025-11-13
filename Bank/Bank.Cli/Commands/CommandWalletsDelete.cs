@@ -3,6 +3,9 @@ using Bank.Cli.Interfaces;
 
 namespace Bank.Cli.Commands;
 
+/// <summary>
+/// Команда удаления всех кошельков из хранилища.
+/// </summary>
 internal class CommandWalletsDelete : BaseCommand
 {
     private readonly IServiceWallet _wallets;

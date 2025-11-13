@@ -1,8 +1,11 @@
-﻿using Bank.App.Interfaces;
+﻿ using Bank.App.Interfaces;
 using Bank.Cli.Interfaces;
 
 namespace Bank.Cli.Commands;
 
+/// <summary>
+/// Команда создания случайных транзакций.
+/// </summary>
 internal class CommandTransactionGenerate : BaseCommand
 {
     private readonly int _transactionCountPerWallet = 20;

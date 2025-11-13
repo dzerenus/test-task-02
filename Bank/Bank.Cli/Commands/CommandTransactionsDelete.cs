@@ -3,6 +3,9 @@ using Bank.Cli.Interfaces;
 
 namespace Bank.Cli.Commands;
 
+/// <summary>
+/// Команда удаления всех транзакций их хранилища.
+/// </summary>
 internal class CommandTransactionsDelete: BaseCommand
 {
     private readonly IServiceTransaction _transactions;

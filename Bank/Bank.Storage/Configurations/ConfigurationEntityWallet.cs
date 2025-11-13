@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Bank.Storage.Configurations;
 
+/// <summary>
+/// Настройки сущности кошелька в базе данных.
+/// </summary>
 internal class ConfigurationEntityWallet : ConfigurationEntityBaseModel<EntityWallet>, IEntityTypeConfiguration<EntityWallet>
 {
     public new void Configure(EntityTypeBuilder<EntityWallet> builder)

@@ -5,8 +5,16 @@ using Bank.Cli.Models;
 
 namespace Bank.Cli.Commands;
 
+/// <summary>
+/// Команда отображения все транзакций за указанный месяц.
+/// </summary>
 internal class CommandTaskTransactions : BaseCommandTask
 {
+    // Скопировано из ТЗ:
+    // Для указанного месяца сгруппировать все транзакции по типу (Income/Expense),
+    // отсортировать группы по общей сумме (по убыванию),
+    // в каждой группе отсортировать транзакции по дате (от самых старых к самым новым).
+
     private readonly IServiceTransaction _transactionService;
     private readonly IServiceExchange _exchangeService;
     private readonly IServiceWallet _walletService;
@@ -28,11 +36,14 @@ internal class CommandTaskTransactions : BaseCommandTask
 
     protected override async Task DoCommand(CancellationToken cancellationToken = default)
     {
+        // Получаем от пользователя месяц.
         var dateFilter = GetMonthFilter();
         if (dateFilter is null) return;
 
         Logger.Inf("Ожидайте загрузку данных...");
-        Logger.Inf($"Выбран диапазон дат {dateFilter.StartDate:dd.MM.yyyy}-{dateFilter.EndDate:dd.MM.yyyy}...");
+        Logger.Inf($"Выбран диапазон дат {dateFilter.StartDate:dd.MM.yyyy} - {dateFilter.EndDate:dd.MM.yyyy}...");
+
+        // Загружаем все транзакции за указанный месяц.
 
         var transactions = await _transactionService.Get(
             minCreatedAtUtc: dateFilter.StartDate.ToUniversalTime(),
@@ -42,14 +53,21 @@ internal class CommandTaskTransactions : BaseCommandTask
         Logger.Inf($"Найдено {transactions.Count} транзакций!");
         Logger.Inf($"Сортировка в процессе...");
 
+        // Выделяем уникальные ID кошельков транзакций.
+
         var walletIds = transactions
             .Select(x => x.WalletId)
             .Distinct()
             .ToList();
 
+        // Получаем курсы валют уникальных кошельков.
+
         var walletsIdCurrencies = await GetWalletCurrencies(
             walletIds: walletIds, 
             cancellationToken: cancellationToken);
+
+        // Формируем расширенные данные о транзакциях с 
+        // обоими курсами валют для удобного анализа.
 
         var extendedTransactions = new List<TransactionExtended>();
 
@@ -72,6 +90,8 @@ internal class CommandTaskTransactions : BaseCommandTask
             extendedTransactions.Add(extended);
         }
 
+        // Сортируем транзакции в зависимости от требований.
+
         var sortedTransactions = extendedTransactions
             .OrderByDescending(x => x.Type)
             .ThenByDescending(x => x.Currencies[Currency.RUB])
@@ -80,6 +100,8 @@ internal class CommandTaskTransactions : BaseCommandTask
 
         Console.Clear();
 
+        // Вывод транзакций на экран.
+
         foreach (var transaction in sortedTransactions)
         {
             WriteExtended(transaction);
@@ -87,6 +109,12 @@ internal class CommandTaskTransactions : BaseCommandTask
         }
     }
 
+    /// <summary>
+    /// Получить валюты кошельков по их ID.
+    /// </summary>
+    /// <param name="walletIds">Список ID кошельков.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    /// <returns>Слоарь, в котором ID кошелька соотносится с типом валюты.</returns>
     private async Task<IReadOnlyDictionary<Guid, Currency>> GetWalletCurrencies(
         IReadOnlyList<Guid> walletIds,
         CancellationToken cancellationToken = default)
@@ -104,6 +132,10 @@ internal class CommandTaskTransactions : BaseCommandTask
         return walletIdCurrency;
     }
 
+    /// <summary>
+    /// Вывести в консоль расширенные данные транзакции.
+    /// </summary>
+    /// <param name="extended"></param>
     private void WriteExtended(TransactionExtended extended)
     {
         var type = GetTypeString(extended.Type);
@@ -111,14 +143,19 @@ internal class CommandTaskTransactions : BaseCommandTask
         var amountUsd = extended.Currencies[Currency.USD];
 
         Console.WriteLine($"{type} — {extended.CreatedAtUtc:dd.MM.yyyy HH:mm:ss}");
-        Console.WriteLine($"{GetCurrencyString(Currency.RUB)} {amountRub:0.##}");
-        Console.WriteLine($"{GetCurrencyString(Currency.USD)} {amountUsd:0.##}");
+        Console.WriteLine($"{Currency.RUB} {amountRub:0.##}");
+        Console.WriteLine($"{Currency.USD} {amountUsd:0.##}");
     }
 
+    /// <summary>
+    /// Сделать строку из типа транзакции.
+    /// </summary>
+    /// <param name="type">Тип транзакции.</param>
+    /// <returns>Строка ПРИХОД или РАСХОД.</returns>
     private string GetTypeString(TransactionType type)
     {
-        if (type == TransactionType.Income) return "Приход";
-        if (type == TransactionType.Expense) return "Расход";
+        if (type == TransactionType.Income) return "ПРИХОД";
+        if (type == TransactionType.Expense) return "РАСХОД";
 
         throw new InvalidOperationException("Unexpected Transaction Type!");
     }

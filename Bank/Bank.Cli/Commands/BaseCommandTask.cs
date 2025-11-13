@@ -5,6 +5,9 @@ using Bank.Core.Enums;
 
 namespace Bank.Cli.Commands;
 
+/// <summary>
+/// Более сложный сервис выполнения команды, имеющий базовый функционал взаимодействия с пользователем.
+/// </summary>
 internal abstract class BaseCommandTask : BaseCommand
 {
     public BaseCommandTask(
@@ -16,6 +19,11 @@ internal abstract class BaseCommandTask : BaseCommand
     {
     }
 
+    /// <summary>
+    /// Получить от пользователя выбранный им месяц.
+    /// И сделать на его основе фильтр по датам.
+    /// </summary>
+    /// <returns></returns>
     protected DateFilter? GetMonthFilter()
     {
         Console.Clear();
@@ -72,7 +80,8 @@ internal abstract class BaseCommandTask : BaseCommand
             endDate: maxDate);
     }
 
-    protected string GetCurrencyString(Currency currency)
+    
+    protected static string GetCurrencyString(Currency currency)
     {
         if (currency == Currency.USD) return "USD";
         if (currency == Currency.RUB) return "RUB";

@@ -1,12 +1,21 @@
-﻿using Bank.Cli.Commands;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Bank.Cli.Enums;
+using Bank.Cli.Commands;
 using Bank.Cli.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Bank.Cli.Services;
 
+/// <summary>
+/// Сервис формирования команд в зависимости от запроса.
+/// </summary>
+/// <param name="serviceProvider">Проводник сервисов.</param>
 internal class CommandFactory(IServiceProvider serviceProvider) : ICommandFactory
 {
+    /// <summary>
+    /// Сформировать сервис команды в зависимости от переданной команды.
+    /// </summary>
+    /// <param name="command">Выбранная команда.</param>
+    /// <returns>Сервис команды.</returns>
     public ICommand CreateCommand(Command command)
     {
         var services = serviceProvider.GetServices<ICommand>();

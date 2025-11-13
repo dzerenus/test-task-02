@@ -5,8 +5,15 @@ using Bank.Core.Models;
 
 namespace Bank.Cli.Commands;
 
+/// <summary>
+/// Команда вывода крупнейших расходов кошелька за выбранный сервис.
+/// </summary>
 internal class CommandTaskWallets : BaseCommandTask
 {
+    // Скопировано из ТЗ:
+    // 3 самые большие траты за указанный месяц для каждого кошелька,
+    // отсортированные по убыванию суммы.
+
     private readonly IServiceWallet _walletService;
     private readonly IServiceTransaction _transactionService;
 
@@ -25,6 +32,8 @@ internal class CommandTaskWallets : BaseCommandTask
 
     protected override async Task DoCommand(CancellationToken cancellationToken = default)
     {
+        // Пользователь выбирает месяц.
+
         var dateFilter = GetMonthFilter();
         if (dateFilter is null) return;
 
@@ -33,7 +42,10 @@ internal class CommandTaskWallets : BaseCommandTask
         var wallets = await _walletService.Get(cancellationToken);
 
         Logger.Inf($"Загружено {wallets.Count} кошельков!");
-        Logger.Inf($"Загружено транзакций...");
+
+        // Загружаем все транзакции для кошелька за выбранный месяц.
+
+        Logger.Inf($"Загрузка транзакций...");
 
         var walletsTransactions = new Dictionary<Wallet, IReadOnlyList<Transaction>>();
         
@@ -48,6 +60,8 @@ internal class CommandTaskWallets : BaseCommandTask
             Logger.Inf($"Для кошелька «{wallet.Title}» загружено транзакций: {transactions.Count}");
             walletsTransactions[wallet] = transactions;
         }
+
+        // Отбираем необходимые транзакции и сортируем их в соответствии с условиями.
 
         Logger.Inf($"Выполняется сортировка...");
 
@@ -72,17 +86,24 @@ internal class CommandTaskWallets : BaseCommandTask
         Logger.Inf($"Обработка завершена!");
         Console.Clear();
 
+        // Вывод транзакций на экран.
+
         foreach (var walletTransactions in walletsTransactions)
         {
             var wallet = walletTransactions.Key;
             var transactions = walletTransactions.Value;
 
-            var currency = GetCurrencyString(wallet.Currency);
-
-            Console.WriteLine($"{currency} {wallet.Title}");
+            Console.WriteLine($"{wallet.Currency} {wallet.Title}");
 
             foreach (var transaction in transactions)
-                Console.WriteLine($"> РАСХОД: {transaction.Amount:0.##}");
+            {
+                var transactionString = $"> РАСХОД: {transaction.Amount:0.##}";
+
+                if (transaction.Description is not null)
+                    transactionString += $" — {transaction.Description}";
+
+                Console.WriteLine(transactionString);
+            }
 
             Console.WriteLine($"---");
         }
